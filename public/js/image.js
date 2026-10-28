@@ -48,3 +48,25 @@ export async function cutout(photo, rawMask, { size = 512, pad = 0.06 } = {}) {
     pixels: out.getContext("2d").getImageData(0, 0, size, size).data,
   };
 }
+
+// One piece cut out of the full photo on white, for visual product search:
+// the low-res mask is scaled up (smoothly) and used as an alpha mask.
+export async function pieceImage(photoBlob, piece, size = 512, pad = 0.08) {
+  const bmp = await createImageBitmap(photoBlob);
+  const W = bmp.width, H = bmp.height;
+  const m = new OffscreenCanvas(piece.mw, piece.mh), mctx = m.getContext("2d"), img = mctx.createImageData(piece.mw, piece.mh);
+  for (let i = 0; i < piece.mask.length; i++) img.data[i * 4 + 3] = piece.mask[i] ? 255 : 0;
+  mctx.putImageData(img, 0, 0);
+  const layer = new OffscreenCanvas(W, H), lctx = layer.getContext("2d");
+  lctx.drawImage(bmp, 0, 0);
+  lctx.globalCompositeOperation = "destination-in";
+  lctx.imageSmoothingEnabled = true;
+  lctx.drawImage(m, 0, 0, W, H);
+  const b = piece.box, side = Math.max(b.w * W, b.h * H) * (1 + 2 * pad);
+  const cx = (b.x + b.w / 2) * W, cy = (b.y + b.h / 2) * H;
+  const out = new OffscreenCanvas(size, size), ctx = out.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, size, size);
+  ctx.drawImage(layer, cx - side / 2, cy - side / 2, side, side, 0, 0, size, size);
+  bmp.close?.();
+  return out.convertToBlob({ type: "image/jpeg", quality: 0.9 });
+}

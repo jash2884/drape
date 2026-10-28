@@ -1,9 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "drape",
+  "main": "src/worker.ts",
   "compatibility_date": "2026-10-01",
-  // Static site: the closet lives on the device and the AI runs in the browser.
-  "assets": { "directory": "./public", "not_found_handling": "single-page-application" },
+  // The app is static and the AI runs in the browser. The Worker only handles
+  // /api/* (visual product matching) and /tmp/* (cut-outs the matcher fetches).
+  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/tmp/*"] },
   "routes": [{ "pattern": "drape.jashparmar.com", "custom_domain": true }],
-  "workers_dev": false
+  "workers_dev": false,
+  "d1_databases": [{ "binding": "DB", "database_name": "drape", "database_id": "2b07265b-5560-4974-a589-4cf3b47f9b9f", "migrations_dir": "migrations" }],
+  "ratelimits": [{ "name": "MATCH_LIMITER", "namespace_id": "4203", "simple": { "limit": 10, "period": 60 } }],
+  "observability": { "enabled": true }
+  // Secret: SERPAPI_KEY (npx wrangler secret put SERPAPI_KEY)
 }

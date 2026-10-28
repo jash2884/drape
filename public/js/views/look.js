@@ -1,6 +1,7 @@
 // A look: the photo with every piece outlined and numbered, and for each piece
 // a description you can fix in a tap and links to shop it.
 import { deleteLook, getLook, putLook } from "../db.js";
+import { pieceImage } from "../image.js";
 import * as ml from "../ml.js";
 import { describe, shopLinks } from "../stores.js";
 import { labelOf, slotOf } from "../taxonomy.js";
@@ -55,8 +56,38 @@ export async function render(root, id) {
         h("div", { class: "chip-row" },
           guesses.map((c) => h("button", { type: "button", class: `chip small${p.tags.category === c ? " on" : ""}`, onclick: (e) => { e.stopPropagation(); p.tags.category = c; p.tags.slot = slotOf(c); save(); drawList(); } }, labelOf("category", c))),
           p.tags.colours.slice(0, 3).map((c) => h("span", { class: "chip small colour" }, h("i", { style: `--c:${c.hex}` }), c.label))),
-        h("div", { class: "shop" }, h("span", { class: "small muted" }, "Shop it:"),
+        matches(p),
+        h("div", { class: "shop" }, h("span", { class: "small muted" }, "Search stores:"),
           shopLinks(p.tags).map((s) => h("a", { class: "shop-link", href: s.href, target: "_blank", rel: "noopener sponsored", onclick: (e) => e.stopPropagation() }, s.name)))));
+  }
+
+  // Exact or closest matches for one piece, found on demand and kept with the look.
+  function matches(p) {
+    const box = h("div", { class: "matches" });
+    const proxied = (u) => (u ? `/api/thumb?u=${encodeURIComponent(u)}` : null);
+    const show = () => {
+      if (p.matchError) return box.replaceChildren(h("p", { class: "small error" }, p.matchError), findBtn("Try again"));
+      if (!p.matches) return box.replaceChildren(findBtn("Find this exact item"));
+      if (!p.matches.length) return box.replaceChildren(h("p", { class: "small muted" }, "No shops found for this one. Try the store searches below."));
+      box.replaceChildren(h("p", { class: "small muted" }, "Exact or closest matches"), h("div", { class: "match-row" }, p.matches.map((m) => h("a", { class: "match", href: m.link, target: "_blank", rel: "noopener nofollow sponsored", onclick: (e) => e.stopPropagation() },
+        h("div", { class: "match-img" }, m.image ? h("img", { src: proxied(m.image), alt: "", loading: "lazy", referrerpolicy: "no-referrer" }) : null, m.exact ? h("span", { class: "exact" }, "Exact") : null),
+        h("b", null, m.price ?? "See price"),
+        h("span", { class: "match-title" }, m.title),
+        h("span", { class: "small muted" }, m.store)))));
+    };
+    const findBtn = (label) => h("button", { type: "button", class: "btn primary small", onclick: async (e) => {
+      e.stopPropagation();
+      box.replaceChildren(h("p", { class: "small muted" }, "Searching the web for this exact piece…"));
+      try {
+        const res = await fetch("/api/match", { method: "POST", headers: { "Content-Type": "image/jpeg" }, body: await pieceImage(look.photo, p) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "The search didn't work.");
+        p.matches = data.products; p.matchError = null;
+      } catch (err) { p.matchError = err.message; }
+      save(); show();
+    } }, label);
+    show();
+    return box;
   }
 
   function drawList() {
