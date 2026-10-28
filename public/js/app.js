@@ -1,4 +1,4 @@
-// Hash router: #/ closet, #/add, #/item/<id>.
+// Hash router: #/ find a look, #/look/<id>.
 import { h } from "./ui.js";
 
 const main = document.getElementById("app");
@@ -8,9 +8,9 @@ async function route() {
   const id = ++seq;
   cleanup?.(); cleanup = null;
   const [, page = "", arg] = location.hash.replace(/^#/, "").split("/");
-  for (const a of document.querySelectorAll("[data-nav]")) a.setAttribute("aria-current", String(a.dataset.nav === (page || "closet")));
+  for (const a of document.querySelectorAll("[data-nav]")) a.setAttribute("aria-current", String(a.dataset.nav === (page || "find")));
   try {
-    const view = await import(page === "add" ? "./views/add.js" : page === "item" ? "./views/item.js" : "./views/closet.js");
+    const view = await import(page === "look" ? "./views/look.js" : "./views/find.js");
     if (id !== seq) return;
     const box = h("div", { class: "page" });
     main.replaceChildren(box);

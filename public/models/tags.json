@@ -1,7 +1,7 @@
 {
  "model": "Marqo/marqo-fashionSigLIP",
  "dim": 768,
- "count": 63,
+ "count": 65,
  "prompts": [
   {
    "group": "category",
@@ -311,7 +311,17 @@
   {
    "group": "subject",
    "id": "person",
-   "prompt": "a person's face, hair or bare skin"
+   "prompt": "a whole person standing"
+  },
+  {
+   "group": "subject",
+   "id": "skin",
+   "prompt": "bare skin: bare legs or bare arms"
+  },
+  {
+   "group": "subject",
+   "id": "face",
+   "prompt": "a face with hair"
   },
   {
    "group": "subject",

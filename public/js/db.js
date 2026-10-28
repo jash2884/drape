@@ -1,7 +1,7 @@
 // The closet lives on the device (IndexedDB): images, tags and embeddings.
 // Each item keeps what the AI predicted next to what the user saved, so
 // corrections can later train a better tagger.
-const DB = "drape", VERSION = 1;
+const DB = "drape", VERSION = 2;
 let dbp = null;
 
 function open() {
@@ -10,16 +10,17 @@ function open() {
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains("items")) db.createObjectStore("items", { keyPath: "id" }).createIndex("created", "created");
+      if (!db.objectStoreNames.contains("looks")) db.createObjectStore("looks", { keyPath: "id" }).createIndex("created", "created");
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   }));
 }
 
-async function tx(mode, fn) {
+async function tx(mode, fn, name = "items") {
   const db = await open();
   return new Promise((resolve, reject) => {
-    const t = db.transaction("items", mode), store = t.objectStore("items");
+    const t = db.transaction(name, mode), store = t.objectStore(name);
     let result;
     Promise.resolve(fn(store)).then((r) => { result = r; });
     t.oncomplete = () => resolve(result);
@@ -37,3 +38,9 @@ export const deleteItem = (id) => tx("readwrite", (s) => req(s.delete(id)));
 
 // Ask the browser not to evict the closet when space is tight.
 export const persist = () => navigator.storage?.persist?.().catch(() => false);
+
+// Looks: a screenshot and the pieces found in it.
+export const allLooks = () => tx("readonly", (s) => req(s.index("created").getAll()), "looks").then((x) => x.reverse());
+export const getLook = (id) => tx("readonly", (s) => req(s.get(id)), "looks");
+export const putLook = (look) => tx("readwrite", (s) => req(s.put(look)), "looks");
+export const deleteLook = (id) => tx("readwrite", (s) => req(s.delete(id)), "looks");

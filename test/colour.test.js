@@ -82,3 +82,64 @@ test("cleanMask drops specks, keeps big parts and fills holes", () => {
   assert.equal(c[5 * w + 5], 1, "hole filled");
   assert.equal(c[10 * w + 10], 1, "second part kept");
 });
+
+import { choosePieces, cropRGBA, fracBox, inside } from "../public/js/automask.js";
+test("choosePieces keeps one per region, drops non-clothing and nested duplicates", () => {
+  const n = 100, m = (from, to) => { const a = new Uint8Array(n); for (let i = from; i < to; i++) a[i] = 1; return a; };
+  const jacket = { mask: m(0, 40), clothing: 0.95, slot: "outer" };
+  const jacket2 = { mask: m(5, 40), clothing: 0.9, slot: "outer" }; // same jacket, slightly smaller
+  const shirt = { mask: m(15, 30), clothing: 0.8, slot: "top" }; // inside the jacket but a different slot... still nested
+  const jeans = { mask: m(50, 80), clothing: 0.92, slot: "bottom" };
+  const wall = { mask: m(80, 100), clothing: 0.3, slot: "top" };
+  const out = choosePieces([wall, jacket2, shirt, jeans, jacket]);
+  assert.deepEqual(out.map((p) => p.slot), ["outer", "bottom"]);
+  assert.equal(inside(m(15, 30), m(0, 40)), 1);
+  const rgba = cropRGBA(new Uint8ClampedArray(100 * 3).fill(40), 10, 10, 3, m(0, 50), 8, 0);
+  assert.equal(rgba[(4 * 8 + 4) * 4 + 3], 255); // the centre is on the garment → opaque
+  assert.equal(rgba[3], 0); // the corner is padding → transparent
+  assert.deepEqual(fracBox(m(0, 50), 10, 10), { x: 0, y: 0, w: 1, h: 0.5 });
+});
+
+import { describe, shopLinks } from "../public/js/stores.js";
+test("shop queries read naturally and are URL-safe", () => {
+  assert.equal(describe({ category: "sweater", pattern: "textured", style: "casual", colours: [{ label: "Charcoal" }] }), "charcoal textured sweater");
+  assert.equal(describe({ category: "dress-shoes", pattern: "solid", style: "formal", colours: [{ label: "Black" }] }), "black formal dress shoes");
+  assert.equal(describe({ category: "shirt", pattern: "checked", style: "casual", colours: [] }), "checked shirt");
+  const links = shopLinks({ category: "jeans", pattern: "solid", colours: [{ label: "Light blue" }] });
+  assert.match(links[0].href, /k=light%20blue%20jeans/);
+  assert.equal(links.length, 5);
+});
+
+import { mergePairs } from "../public/js/automask.js";
+test("mergePairs joins a left and right shoe but not a shoe and a bag", () => {
+  const w = 10, m = (cells) => { const a = new Uint8Array(100); for (const [x, y] of cells) a[y * w + x] = 1; return a; };
+  const left = { slot: "shoes", mask: m([[2, 8], [3, 8]]), mw: 10, mh: 10 };
+  const right = { slot: "shoes", mask: m([[5, 8], [6, 8]]), mw: 10, mh: 10 };
+  const bag = { slot: "accessory", mask: m([[8, 5]]), mw: 10, mh: 10 };
+  const out = mergePairs([left, right, bag]);
+  assert.equal(out.length, 2);
+  assert.equal(out[0].mask[8 * w + 6], 1);
+});
+
+import { mainPersonGarments } from "../public/js/parsing.js";
+import { within } from "../public/js/tagging.js";
+test("parsing keeps the main person's garments and merges shoes", () => {
+  const W = 20, H = 20, mk = (cells) => { const d = new Uint8Array(W * H); for (const [x0, x1, y0, y1] of cells) for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) d[y * W + x] = 255; return { data: d, width: W, height: H }; };
+  const segs = [
+    { label: "Background", mask: mk([[0, 20, 0, 20]]) },
+    { label: "Face", mask: mk([[8, 12, 1, 4]]) },
+    { label: "Upper-clothes", mask: mk([[7, 13, 4, 10], [0, 2, 4, 10]]) }, // the main person's top + someone at the edge
+    { label: "Pants", mask: mk([[8, 12, 10, 17]]) },
+    { label: "Left-shoe", mask: mk([[8, 10, 17, 19]]) },
+    { label: "Right-shoe", mask: mk([[10, 12, 17, 19]]) },
+  ];
+  const r = mainPersonGarments(segs, 20);
+  assert.ok(r.person);
+  assert.deepEqual(r.garments.map((g) => g.label), ["Upper-clothes", "Pants", "Shoes"]);
+  const top = r.garments[0].mask;
+  assert.equal(top[5 * 20 + 1], 0, "the edge figure's top is dropped");
+  assert.equal(top[5 * 20 + 9], 1);
+  const g = { all: [{ id: "scarf", p: 0.6 }, { id: "jeans", p: 0.3 }, { id: "trousers", p: 0.1 }] };
+  assert.equal(within(g, ["jeans", "trousers"]).id, "jeans");
+  assert.ok(Math.abs(within(g, ["jeans", "trousers"]).confidence - 0.75) < 1e-9);
+});

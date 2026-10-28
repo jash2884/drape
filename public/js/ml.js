@@ -28,6 +28,6 @@ function call(type, payload = {}, transfer = []) {
 export const onProgress = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 export const ready = () => call("init");
 export const setImage = (imageId, blob) => call("image", { imageId, blob });
-export const segment = (imageId, points) => call("segment", { imageId, points });
-export const autoSegment = (imageId) => call("auto", { imageId });
+export const findLook = (imageId) => call("look", { imageId });
+export const pieceAt = (imageId, point) => call("piece", { imageId, point });
 export const embed = (blob) => call("embed", { blob });

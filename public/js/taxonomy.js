@@ -87,7 +87,9 @@ export const GROUPS = {
   subject: [
     ["clothing", "Clothing", "a single piece of clothing, footwear or a fashion accessory"],
     ["background", "Background", "a background: a wall, floor, ground, grass, stone, table or furniture"],
-    ["person", "Person", "a person's face, hair or bare skin"],
+    ["person", "Person", "a whole person standing"],
+    ["skin", "Bare skin", "bare skin: bare legs or bare arms"],
+    ["face", "Face", "a face with hair"],
     ["clutter", "Clutter", "a cluttered room with many objects"],
   ],
 };

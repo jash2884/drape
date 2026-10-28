@@ -17,7 +17,7 @@ export function classify(embedding, bank, meta, { scale = 100 } = {}) {
     const exp = list.map((x) => Math.exp(scale * (x.score - max)));
     const sum = exp.reduce((a, b) => a + b, 0);
     const top = list.map((x, i) => ({ id: x.id, p: exp[i] / sum })).sort((a, b) => b.p - a.p);
-    out[group] = { id: top[0].id, confidence: top[0].p, top: top.slice(0, 5) };
+    out[group] = { id: top[0].id, confidence: top[0].p, top: top.slice(0, 5), all: top };
   }
   return out;
 }
@@ -26,4 +26,14 @@ export function cosine(a, b) {
   let s = 0;
   for (let i = 0; i < a.length; i++) s += a[i] * b[i];
   return s;
+}
+
+// The best option of a group among an allowed set, renormalised (e.g. the
+// parser says "pants", so only bottoms are possible).
+export function within(group, allowed) {
+  const keep = group.all.filter((t) => allowed.includes(t.id));
+  if (!keep.length) return group;
+  const sum = keep.reduce((s, t) => s + t.p, 0);
+  const top = keep.map((t) => ({ id: t.id, p: t.p / sum }));
+  return { id: top[0].id, confidence: top[0].p, top: top.slice(0, 5), all: top };
 }

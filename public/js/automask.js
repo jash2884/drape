@@ -97,3 +97,69 @@ export function cleanMask(mask, w, h, keep = 0.15) {
   for (let i = 0; i < out.length; i++) if (!outside[i]) out[i] = 1;
   return out;
 }
+
+// Grid for whole-outfit photos: denser, covering head to toe.
+export const OUTFIT_GRID = [0.18, 0.34, 0.5, 0.66, 0.82].flatMap((y) => [0.3, 0.45, 0.6, 0.75].map((x) => [x, y]));
+
+export const plausiblePiece = (mask, w, h, maxCover = 0.6) => { const c = coverage(mask); return c > 0.006 && c < maxCover && edgesTouched(mask, w, h) < 3; };
+
+// Containment: how much of a lies inside b.
+export function inside(a, b) {
+  let ab = 0, an = 0;
+  for (let i = 0; i < a.length; i++) if (a[i]) { an++; if (b[i]) ab++; }
+  return an ? ab / an : 0;
+}
+
+// Choose the pieces of an outfit from scored candidates
+// ({ mask, clothing, slot, category, area }): clothing only, then greedily
+// keep the most clothing-like, skipping any that mostly overlap a kept piece
+// of the same slot or sit almost entirely inside a kept piece.
+// With `largestFirst` (photos without a person: flat lays, product shots) the
+// biggest garment wins and anything inside it is a detail of it, not a piece.
+export function choosePieces(cands, { minClothing = 0.6, max = 6, largestFirst = false } = {}) {
+  const kept = [];
+  const order = largestFirst ? (a, b) => coverage(b.mask) - coverage(a.mask) : (a, b) => b.clothing - a.clothing;
+  for (const c of [...cands].filter((x) => x.clothing >= minClothing).sort(order)) {
+    const clash = kept.some((k) => (k.slot === c.slot && iou(k.mask, c.mask) > 0.3) || inside(c.mask, k.mask) > (largestFirst ? 0.6 : 0.8) || inside(k.mask, c.mask) > 0.8 && k.slot === c.slot);
+    if (!clash) kept.push(c);
+    if (kept.length >= max) break;
+  }
+  return kept;
+}
+
+// RGBA version of cropOnWhite (alpha 0 outside the mask) for colour extraction.
+export function cropRGBA(data, w, h, channels, mask, size = 224, pad = 0.06, mw = w, mh = h) {
+  const rgb = cropOnWhite(data, w, h, channels, mask, size, pad, mw, mh);
+  const alpha = cropOnWhite(new Uint8ClampedArray(w * h * 3), w, h, 3, mask, size, pad, mw, mh); // masked pixels become 0, the rest stay 255
+  const out = new Uint8ClampedArray(size * size * 4);
+  for (let i = 0; i < size * size; i++) { out[i * 4] = rgb[i * 3]; out[i * 4 + 1] = rgb[i * 3 + 1]; out[i * 4 + 2] = rgb[i * 3 + 2]; out[i * 4 + 3] = alpha[i * 3] === 0 ? 255 : 0; }
+  return out;
+}
+
+// Outline-friendly bounding box of a low-res mask, as fractions of the frame.
+export function fracBox(mask, mw, mh) {
+  let x0 = mw, y0 = mh, x1 = -1, y1 = -1;
+  for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) if (mask[y * mw + x]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return x1 < 0 ? null : { x: x0 / mw, y: y0 / mh, w: (x1 - x0 + 1) / mw, h: (y1 - y0 + 1) / mh };
+}
+
+// Shoes come in pairs: join same-slot shoe pieces that sit side by side at
+// the same height into one piece (the first one's description wins).
+export function mergePairs(pieces) {
+  const out = [];
+  for (const p of pieces) {
+    const a = fracBox(p.mask, p.mw, p.mh);
+    const mate = p.slot === "shoes" && out.find((q) => {
+      if (q.slot !== "shoes" || q.mw !== p.mw) return false;
+      const b = fracBox(q.mask, q.mw, q.mh);
+      const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      const gapX = Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w);
+      return overlapY > 0.3 * Math.min(a.h, b.h) && gapX < Math.max(a.w, b.w);
+    });
+    if (!mate) { out.push(p); continue; }
+    const mask = new Uint8Array(mate.mask);
+    for (let i = 0; i < mask.length; i++) if (p.mask[i]) mask[i] = 1;
+    mate.mask = mask;
+  }
+  return out;
+}
