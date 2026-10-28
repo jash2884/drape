@@ -33,7 +33,7 @@ async function match(request: Request, env: Env, ctx: Ctx) {
 
   const hash = await sha256(body);
   const origin = new URL(request.url).origin;
-  const cacheKey = new Request(`${origin}/__cache/match/${hash}`);
+  const cacheKey = new Request(`${origin}/__cache/match/v2/${hash}`);
   const cache = (caches as unknown as { default: Cache }).default;
   const hit = await cache.match(cacheKey);
   if (hit) return hit;
@@ -50,18 +50,21 @@ async function match(request: Request, env: Env, ctx: Ctx) {
     await env.DB.prepare("DELETE FROM tmp_images WHERE created < ?").bind(Date.now() - 10 * 60_000).run();
   };
   try {
-    const imageUrl = `${origin}/tmp/${key}`;
-    const ask = async (kind: string) => {
+    const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[type];
+    const imageUrl = `${origin}/tmp/${key}.${ext}`;
+    const ask = async (kind?: string) => {
       const u = new URL("https://serpapi.com/search.json");
-      u.search = new URLSearchParams({ engine: "google_lens", url: imageUrl, type: kind, hl: "en", country: "us", api_key: env.SERPAPI_KEY! }).toString();
+      u.search = new URLSearchParams({ engine: "google_lens", url: imageUrl, ...(kind ? { type: kind } : {}), hl: "en", country: "us", api_key: env.SERPAPI_KEY! }).toString();
       const res = await fetch(u, { signal: AbortSignal.timeout(25_000) });
       if (!res.ok) throw new Error(`search ${res.status}: ${(await res.text()).slice(0, 160)}`);
       return res.json();
     };
-    let products = toProducts(await ask("products"));
-    if (products.length < 3) products = toProducts(await ask("visual_matches"));
+    // Visual matches carry prices where Google has them; exact matches are the
+    // same product on other pages. Both together give the best shop list.
+    const [visual, exact] = await Promise.all([ask("visual_matches"), ask("exact_matches").catch(() => ({}))]) as Record<string, unknown>[];
+    const products = toProducts({ ...exact, ...visual, exact_matches: exact.exact_matches });
     const res = json({ products }, 200, "public, max-age=86400");
-    ctx.waitUntil(cache.put(cacheKey, res.clone()));
+    if (products.length) ctx.waitUntil(cache.put(cacheKey, res.clone())); // an empty answer may be a hiccup: don't keep it
     return res;
   } catch (e) {
     console.error("match failed", e);
@@ -85,10 +88,12 @@ async function thumb(request: Request) {
 }
 
 async function tmpImage(key: string, env: Env) {
-  if (!/^[a-f0-9]{44}$/.test(key)) return new Response("Not found", { status: 404 });
-  const row = await env.DB.prepare("SELECT type, bytes FROM tmp_images WHERE key = ?").bind(key).first<{ type: string; bytes: ArrayBuffer }>();
+  if (!/^[a-f0-9]{44}\.(jpg|png|webp)$/.test(key)) return new Response("Not found", { status: 404 });
+  const row = await env.DB.prepare("SELECT type, bytes FROM tmp_images WHERE key = ?").bind(key.split(".")[0]).first<{ type: string; bytes: number[] | ArrayBuffer }>();
   if (!row) return new Response("Not found", { status: 404 });
-  return new Response(row.bytes, { headers: { "Content-Type": row.type, "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
+  // D1 hands BLOBs back as an array of numbers.
+  const bytes = new Uint8Array(row.bytes);
+  return new Response(bytes, { headers: { "Content-Type": row.type, "Content-Length": String(bytes.byteLength), "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
 }
 
 export default {
