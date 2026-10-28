@@ -1,0 +1,322 @@
+{
+ "model": "Marqo/marqo-fashionSigLIP",
+ "dim": 768,
+ "count": 63,
+ "prompts": [
+  {
+   "group": "category",
+   "id": "tshirt",
+   "prompt": "a t-shirt"
+  },
+  {
+   "group": "category",
+   "id": "shirt",
+   "prompt": "a button-up shirt"
+  },
+  {
+   "group": "category",
+   "id": "blouse",
+   "prompt": "a blouse"
+  },
+  {
+   "group": "category",
+   "id": "polo",
+   "prompt": "a polo shirt"
+  },
+  {
+   "group": "category",
+   "id": "tank",
+   "prompt": "a tank top"
+  },
+  {
+   "group": "category",
+   "id": "sweater",
+   "prompt": "a knit sweater"
+  },
+  {
+   "group": "category",
+   "id": "hoodie",
+   "prompt": "a hoodie"
+  },
+  {
+   "group": "category",
+   "id": "sweatshirt",
+   "prompt": "a crewneck sweatshirt"
+  },
+  {
+   "group": "category",
+   "id": "kurta",
+   "prompt": "a kurta"
+  },
+  {
+   "group": "category",
+   "id": "jacket",
+   "prompt": "a jacket"
+  },
+  {
+   "group": "category",
+   "id": "denim-jacket",
+   "prompt": "a denim jacket"
+  },
+  {
+   "group": "category",
+   "id": "leather-jacket",
+   "prompt": "a leather jacket"
+  },
+  {
+   "group": "category",
+   "id": "puffer",
+   "prompt": "a puffer jacket"
+  },
+  {
+   "group": "category",
+   "id": "coat",
+   "prompt": "a long coat"
+  },
+  {
+   "group": "category",
+   "id": "blazer",
+   "prompt": "a blazer"
+  },
+  {
+   "group": "category",
+   "id": "cardigan",
+   "prompt": "a cardigan"
+  },
+  {
+   "group": "category",
+   "id": "jeans",
+   "prompt": "jeans"
+  },
+  {
+   "group": "category",
+   "id": "trousers",
+   "prompt": "tailored trousers"
+  },
+  {
+   "group": "category",
+   "id": "chinos",
+   "prompt": "chino pants"
+  },
+  {
+   "group": "category",
+   "id": "joggers",
+   "prompt": "jogger sweatpants"
+  },
+  {
+   "group": "category",
+   "id": "shorts",
+   "prompt": "shorts"
+  },
+  {
+   "group": "category",
+   "id": "skirt",
+   "prompt": "a skirt"
+  },
+  {
+   "group": "category",
+   "id": "leggings",
+   "prompt": "leggings"
+  },
+  {
+   "group": "category",
+   "id": "dress",
+   "prompt": "a dress"
+  },
+  {
+   "group": "category",
+   "id": "jumpsuit",
+   "prompt": "a jumpsuit"
+  },
+  {
+   "group": "category",
+   "id": "sneakers",
+   "prompt": "sneakers"
+  },
+  {
+   "group": "category",
+   "id": "boots",
+   "prompt": "boots"
+  },
+  {
+   "group": "category",
+   "id": "loafers",
+   "prompt": "loafers"
+  },
+  {
+   "group": "category",
+   "id": "dress-shoes",
+   "prompt": "leather oxford dress shoes"
+  },
+  {
+   "group": "category",
+   "id": "heels",
+   "prompt": "high heels"
+  },
+  {
+   "group": "category",
+   "id": "sandals",
+   "prompt": "sandals"
+  },
+  {
+   "group": "category",
+   "id": "flats",
+   "prompt": "ballet flats"
+  },
+  {
+   "group": "category",
+   "id": "bag",
+   "prompt": "a handbag"
+  },
+  {
+   "group": "category",
+   "id": "backpack",
+   "prompt": "a backpack"
+  },
+  {
+   "group": "category",
+   "id": "cap",
+   "prompt": "a baseball cap"
+  },
+  {
+   "group": "category",
+   "id": "hat",
+   "prompt": "a hat"
+  },
+  {
+   "group": "category",
+   "id": "scarf",
+   "prompt": "a scarf"
+  },
+  {
+   "group": "category",
+   "id": "belt",
+   "prompt": "a belt"
+  },
+  {
+   "group": "category",
+   "id": "watch",
+   "prompt": "a wristwatch"
+  },
+  {
+   "group": "category",
+   "id": "sunglasses",
+   "prompt": "sunglasses"
+  },
+  {
+   "group": "category",
+   "id": "jewellery",
+   "prompt": "jewelry"
+  },
+  {
+   "group": "pattern",
+   "id": "solid",
+   "prompt": "a plain solid-colour garment"
+  },
+  {
+   "group": "pattern",
+   "id": "striped",
+   "prompt": "a striped garment"
+  },
+  {
+   "group": "pattern",
+   "id": "checked",
+   "prompt": "a plaid checked garment"
+  },
+  {
+   "group": "pattern",
+   "id": "floral",
+   "prompt": "a floral print garment"
+  },
+  {
+   "group": "pattern",
+   "id": "graphic",
+   "prompt": "a garment with a graphic print"
+  },
+  {
+   "group": "pattern",
+   "id": "polka",
+   "prompt": "a polka dot garment"
+  },
+  {
+   "group": "pattern",
+   "id": "animal",
+   "prompt": "an animal print garment"
+  },
+  {
+   "group": "pattern",
+   "id": "textured",
+   "prompt": "a textured knit or ribbed garment"
+  },
+  {
+   "group": "style",
+   "id": "casual",
+   "prompt": "casual everyday clothing"
+  },
+  {
+   "group": "style",
+   "id": "smart",
+   "prompt": "smart casual clothing"
+  },
+  {
+   "group": "style",
+   "id": "formal",
+   "prompt": "formal elegant business clothing"
+  },
+  {
+   "group": "style",
+   "id": "sporty",
+   "prompt": "athletic sportswear"
+  },
+  {
+   "group": "style",
+   "id": "street",
+   "prompt": "streetwear"
+  },
+  {
+   "group": "style",
+   "id": "party",
+   "prompt": "party evening wear"
+  },
+  {
+   "group": "style",
+   "id": "lounge",
+   "prompt": "comfortable loungewear"
+  },
+  {
+   "group": "warmth",
+   "id": "light",
+   "prompt": "lightweight summer clothing"
+  },
+  {
+   "group": "warmth",
+   "id": "mid",
+   "prompt": "mid-season spring clothing"
+  },
+  {
+   "group": "warmth",
+   "id": "warm",
+   "prompt": "warm thick winter clothing"
+  },
+  {
+   "group": "subject",
+   "id": "clothing",
+   "prompt": "a single piece of clothing, footwear or a fashion accessory"
+  },
+  {
+   "group": "subject",
+   "id": "background",
+   "prompt": "a background: a wall, floor, ground, grass, stone, table or furniture"
+  },
+  {
+   "group": "subject",
+   "id": "person",
+   "prompt": "a person's face, hair or bare skin"
+  },
+  {
+   "group": "subject",
+   "id": "clutter",
+   "prompt": "a cluttered room with many objects"
+  }
+ ]
+}

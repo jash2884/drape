@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "drape",
+  "compatibility_date": "2026-10-01",
+  // Static site: the closet lives on the device and the AI runs in the browser.
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application" },
+  "routes": [{ "pattern": "drape.jashparmar.com", "custom_domain": true }],
+  "workers_dev": false
+}

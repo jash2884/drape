@@ -1,0 +1,1 @@
+{ "name": "drape-scripts", "private": true, "type": "module", "devDependencies": { "@huggingface/transformers": "4.2.0" } }

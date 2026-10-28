@@ -1,0 +1,1 @@
+{ "name": "Drape", "short_name": "Drape", "description": "Shop your closet first.", "start_url": "/", "display": "standalone", "background_color": "#f6f3ee", "theme_color": "#f6f3ee", "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }] }

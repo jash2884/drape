@@ -1,0 +1,13 @@
+{
+  "name": "drape",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drape: shop your closet first. On-device AI wardrobe.",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "dev": "node scripts/static.js",
+    "deploy": "npm test && npx --yes wrangler@4 deploy"
+  },
+  "engines": { "node": ">=24" }
+}
