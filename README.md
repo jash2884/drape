@@ -34,3 +34,22 @@ product details and main colour. Rebuild it with:
 The seed uses Amazon's 2023 public metadata: prices are dated and some items
 will be gone. Replace it with live affiliate feeds (Amazon Creators API,
 Awin, Impact) before launch.
+
+## Sharing and the browser extension
+
+- **Share this look** (look page) draws a 1080×1350 card on the device: the
+  photo with numbered pieces and the best price for each. Phones get the share
+  sheet; desktops download the PNG.
+- **extension/** is a Chrome extension: right-click any outfit, or click the
+  toolbar button on Instagram/Pinterest, and Drape opens it via
+  `/?shop=<image URL>` (fetched through `/api/thumb`). Permissions are
+  `contextMenus`, `activeTab` and `scripting` only. `npm run extension` builds
+  drape-extension.zip for the Chrome Web Store.
+
+## Affiliate links
+
+Set IDs in `public/js/stores.js` (`AFFILIATE`): an Amazon Associates tag, and
+an Awin publisher ID with the advertiser ID of each approved shop. Every link
+(store searches, exact matches, lookalikes) goes through `affiliate()`.
+Product feeds from Awin or Impact join the catalogue with
+`node scripts/catalog-feed.mjs <feed.csv.gz>`, then the embed and colour steps.
