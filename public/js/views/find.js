@@ -75,8 +75,22 @@ export async function render(root) {
     busy = false;
   }
 
+  // From the browser extension: ?shop=<image URL> (fetched through our image relay).
+  async function fromLink(src) {
+    history.replaceState(null, "", location.pathname + location.hash);
+    if (!/^https:\/\//.test(src)) return;
+    try {
+      const res = await fetch(`/api/thumb?max=5&u=${encodeURIComponent(src)}`);
+      if (!res.ok) throw new Error("that image couldn't be fetched");
+      const blob = await res.blob();
+      run(new File([blob], "outfit", { type: blob.type }));
+    } catch (e) { toast(`Couldn't open that image: ${e.message}`, "error"); }
+  }
+
   idle();
   root.replaceChildren(pick, snap, stage, recent);
   drawRecent();
+  const shared = new URLSearchParams(location.search).get("shop");
+  if (shared) fromLink(shared);
   return () => { alive = false; removeEventListener("paste", onPaste); urls.free(); };
 }

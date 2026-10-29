@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Drape: shop any outfit",
+  "short_name": "Drape",
+  "version": "0.1.0",
+  "description": "Right-click any outfit on Instagram, Pinterest or anywhere else to find every piece and cheaper lookalikes.",
+  "homepage_url": "https://drape.jashparmar.com",
+  "permissions": ["contextMenus", "activeTab", "scripting"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Shop the outfit on this page", "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" } },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+}

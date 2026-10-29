@@ -4,8 +4,9 @@ import { lookalikes } from "../catalog.js";
 import { hexToRgb, rgbToLab } from "../colour.js";
 import { deleteLook, getLook, putLook } from "../db.js";
 import { pieceImage } from "../image.js";
+import { shareLook } from "../share.js";
 import * as ml from "../ml.js";
-import { describe, shopLinks } from "../stores.js";
+import { affiliate, describe, shopLinks } from "../stores.js";
 import { labelOf, slotOf } from "../taxonomy.js";
 import { h, plural, toast, urlBag } from "../ui.js";
 import { storePieces } from "./find.js";
@@ -72,7 +73,7 @@ export async function render(root, id) {
       if (p.matchError) return box.replaceChildren(h("p", { class: "small error" }, p.matchError), findBtn("Try again"));
       if (!p.matches) return box.replaceChildren(findBtn("Find this exact item"));
       if (!p.matches.length) return box.replaceChildren(h("p", { class: "small muted" }, "No shops found for this one. Try the store searches below."));
-      box.replaceChildren(h("p", { class: "small muted" }, "Exact or closest matches"), h("div", { class: "match-row" }, p.matches.map((m) => h("a", { class: "match", href: m.link, target: "_blank", rel: "noopener nofollow sponsored", onclick: (e) => e.stopPropagation() },
+      box.replaceChildren(h("p", { class: "small muted" }, "Exact or closest matches"), h("div", { class: "match-row" }, p.matches.map((m) => h("a", { class: "match", href: affiliate(m.link), target: "_blank", rel: "noopener nofollow sponsored", onclick: (e) => e.stopPropagation() },
         h("div", { class: "match-img" }, m.image ? h("img", { src: proxied(m.image), alt: "", loading: "lazy", referrerpolicy: "no-referrer" }) : null, m.exact ? h("span", { class: "exact" }, "Exact") : null),
         h("b", null, m.price ?? "See price"),
         h("span", { class: "match-title" }, m.title),
@@ -113,7 +114,7 @@ export async function render(root, id) {
             h("div", { class: "match-img" }, h("img", { src: `/api/thumb?u=${encodeURIComponent(m.image)}`, alt: "", loading: "lazy" }), save ? h("span", { class: "exact save" }, `Save ${save}%`) : null),
             h("b", null, `$${m.price.toFixed(2)}`),
             h("span", { class: "match-title" }, m.title),
-            h("span", { class: "small muted" }, `${m.brand || "Amazon"} · ★ ${m.rating}`));
+            h("span", { class: "small muted" }, [m.store, m.rating ? `★ ${m.rating}` : null].filter(Boolean).join(" · ")));
         })),
         h("p", { class: "small muted" }, "Prices may have changed since we last checked."));
     }).catch(() => box.remove());
@@ -152,7 +153,13 @@ export async function render(root, id) {
     h("div", { class: "look" },
       h("div", { class: "look-left" }, h("div", { class: "look-frame" }, photo, over), hint),
       h("div", null,
-        h("header", { class: "page-head" }, h("h1", null, "The look"), h("p", { class: "muted" }, plural(look.pieces.length, "piece"))),
+        h("header", { class: "page-head" }, h("h1", null, "The look"), h("p", { class: "muted" }, plural(look.pieces.length, "piece")),
+          h("button", { type: "button", class: "btn primary small", onclick: async (e) => {
+            const b = e.currentTarget; b.disabled = true; b.textContent = "Making your card…";
+            try { const how = await shareLook(look, TINTS); if (how === "downloaded") toast("Card saved. Post it anywhere.", "good"); }
+            catch (err) { toast(`Couldn't make the card: ${err.message}`, "error"); }
+            b.disabled = false; b.textContent = "Share this look";
+          } }, "Share this look")),
         list,
         h("div", { class: "row" }, h("button", { type: "button", class: "btn ghost danger", onclick: async () => { if (confirm("Delete this look?")) { await deleteLook(look.id); location.hash = "#/"; } } }, "Delete look")),
         h("p", { class: "small muted disclosure" }, "Some shop links may earn Drape a commission. It never changes what we show you."))));

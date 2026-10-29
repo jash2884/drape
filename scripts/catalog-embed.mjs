@@ -18,7 +18,7 @@ const DIM = meta.dim, BATCH = 8;
 // Amazon serves any size from the same image id; 400px is plenty.
 const sized = (u) => u.replace(/\._[^/]*_\.(jpg|png)$/i, "._AC_UL400_.$1").replace(/(\/I\/[^./]+)\.(jpg|png)$/i, "$1._AC_UL400_.$2");
 
-const candidates = readFileSync(data("candidates.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+const candidates = ["candidates.jsonl", "feed-candidates.jsonl"].filter((f) => existsSync(data(f))).flatMap((f) => readFileSync(data(f), "utf8").trim().split("\n").filter(Boolean)).join("\n").trim().split("\n").map((l) => JSON.parse(l));
 const done = new Set(existsSync(data("embedded.jsonl")) ? readFileSync(data("embedded.jsonl"), "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l).asin) : []);
 const todo = candidates.filter((c) => !done.has(c.asin));
 console.log(`${candidates.length} candidates, ${done.size} done, ${todo.length} to embed`);
@@ -69,7 +69,7 @@ const vecs = new Float32Array(readFileSync(data("embedded.bin")).buffer.slice(0)
 if (vecs.length !== rows.length * DIM) throw new Error("embedded.bin and embedded.jsonl are out of step");
 const dir = new URL("../public/catalog/", import.meta.url);
 mkdirSync(dir, { recursive: true });
-const index = { model: meta.model, dim: DIM, version: Date.now().toString(36), source: "Amazon (2023 metadata seed)", categories: {} };
+const index = { model: meta.model, dim: DIM, version: Date.now().toString(36), source: [...new Set(rows.map((r) => r.merchant ?? "Amazon"))].join(", "), categories: {} };
 for (const [cat] of CATEGORIES) {
   const items = rows.map((r, i) => [r, i]).filter(([r]) => r.category === cat);
   if (!items.length) continue;
@@ -80,7 +80,7 @@ for (const [cat] of CATEGORIES) {
     for (const x of v) max = Math.max(max, Math.abs(x));
     const scale = max / 127;
     for (let d = 0; d < DIM; d++) bin[k * DIM + d] = Math.round(v[d] / scale);
-    list.push({ id: r.asin, t: r.title, b: r.brand, p: r.price, r: r.rating, n: r.reviews, g: r.gender, i: r.image, s: +scale.toPrecision(5) });
+    list.push({ id: r.asin, t: r.title, b: r.brand, p: r.price, r: r.rating, n: r.reviews, g: r.gender, i: r.image, s: +scale.toPrecision(5), ...(r.link ? { l: r.link, m: r.merchant } : {}) });
   });
   writeFileSync(new URL(`${cat}.bin`, dir), Buffer.from(bin.buffer));
   writeFileSync(new URL(`${cat}.json`, dir), JSON.stringify({ category: cat, items: list }));

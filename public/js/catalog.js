@@ -2,7 +2,7 @@
 // a small shard of int8 fashion embeddings (made by scripts/catalog-embed.mjs
 // with the same model the app runs), so a search is a few hundred dot
 // products and the photo never leaves the phone.
-import { AFFILIATE } from "./stores.js";
+import { affiliate } from "./stores.js";
 
 let index = null;
 const shards = new Map();
@@ -25,7 +25,8 @@ async function shard(category) {
 
 export const hasCategory = async (category) => Boolean((await loadIndex()).categories[category]);
 
-export const productLink = (id) => `https://www.amazon.com/dp/${id}${AFFILIATE.amazon ? `?tag=${AFFILIATE.amazon}` : ""}`;
+// Feed products carry their own (already tracked) link; the Amazon seed has ASINs.
+export const productLink = (item) => item.l ?? affiliate(`https://www.amazon.com/dp/${item.id}`);
 
 // Closest products to an embedding (unit length) within one category.
 // gender: "w" | "m" | null (unisex items always count). colour: the piece's
@@ -53,6 +54,6 @@ export async function lookalikes(embedding, category, opts) {
   const data = await shard(category);
   if (!data || !embedding) return [];
   return rank(embedding, data, opts).map(({ item, score }) => ({
-    id: item.id, title: item.t, brand: item.b, price: item.p, rating: item.r, reviews: item.n, image: item.i, link: productLink(item.id), score,
+    id: item.id, title: item.t, brand: item.b, store: item.m ?? "Amazon", price: item.p, rating: item.r, reviews: item.n, image: item.i, link: productLink(item), score,
   }));
 }

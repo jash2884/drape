@@ -1,9 +1,9 @@
 // Offline shell. Model weights are cached separately by transformers.js
 // (Cache Storage "transformers-cache"), so the app works offline after first use.
-const CACHE = "drape-v4";
+const CACHE = "drape-v5";
 const SHELL = ["/", "/style.css", "/manifest.webmanifest", "/icons/icon.svg", "/models/tags.json", "/models/tags.bin",
   "/js/app.js", "/js/ui.js", "/js/db.js", "/js/ml.js", "/js/ml.worker.js", "/js/image.js", "/js/colour.js", "/js/taxonomy.js", "/js/tagging.js", "/js/automask.js", "/js/engine.js", "/js/parsing.js",
-  "/js/stores.js", "/js/catalog.js", "/js/views/find.js", "/js/views/look.js"];
+  "/js/stores.js", "/js/catalog.js", "/js/share.js", "/js/views/find.js", "/js/views/look.js"];
 self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", (e) => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k.startsWith("drape-") && k !== CACHE) await caches.delete(k);

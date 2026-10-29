@@ -77,14 +77,17 @@ async function match(request: Request, env: Env, ctx: Ctx) {
 // Product thumbnails come from other sites; the app is cross-origin isolated,
 // so they're relayed through here (images only, small, cached a day).
 async function thumb(request: Request) {
-  const u = new URL(request.url).searchParams.get("u") ?? "";
+  const params = new URL(request.url).searchParams, u = params.get("u") ?? "";
+  // Thumbnails stay small; a full outfit photo (from the extension) may be up to 5 MB.
+  const limit = params.get("max") === "5" ? 5_000_000 : 800_000;
   if (!/^https:\/\//.test(u) || u.length > 1500) return new Response("Bad request", { status: 400 });
   const res = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0 (DrapeBot; +https://drape.jashparmar.com)" }, cf: { cacheTtl: 86400, cacheEverything: true } } as RequestInit).catch(() => null);
   const type = res?.headers.get("content-type") ?? "";
   if (!res?.ok || !type.startsWith("image/")) return new Response("Not found", { status: 404 });
-  const len = Number(res.headers.get("content-length") ?? 0);
-  if (len > 800_000) return new Response("Too big", { status: 413 });
-  return new Response(res.body, { headers: { "Content-Type": type, "Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "same-origin", "X-Content-Type-Options": "nosniff" } });
+  if (Number(res.headers.get("content-length") ?? 0) > limit) return new Response("Too big", { status: 413 });
+  const body = await res.arrayBuffer();
+  if (body.byteLength > limit) return new Response("Too big", { status: 413 });
+  return new Response(body, { headers: { "Content-Type": type, "Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "same-origin", "X-Content-Type-Options": "nosniff" } });
 }
 
 async function tmpImage(key: string, env: Env) {

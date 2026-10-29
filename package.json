@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Drape: shop your closet first. On-device AI wardrobe.",
+  "description": "Drape: find the look for less. On-device fashion AI.",
   "scripts": {
     "test": "node --test test/*.test.js",
     "dev": "node scripts/static.js",
-    "deploy": "npm test && npx --yes wrangler@4 deploy"
+    "deploy": "npm test && npx --yes wrangler@4 deploy",
+    "extension": "cd extension && rm -f ../drape-extension.zip && zip -qr ../drape-extension.zip . -x README.md"
   },
-  "engines": { "node": ">=24" }
+  "engines": {
+    "node": ">=24"
+  }
 }
