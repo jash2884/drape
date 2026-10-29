@@ -162,4 +162,7 @@ main { padding: 22px 0 70px; outline: none; }
 .match-img img { width: 100%; height: 100%; object-fit: cover; }
 .match .exact { position: absolute; left: 6px; top: 6px; background: var(--good); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; }
 .match b { font-size: 14px; margin-top: 4px; }
+.match .exact.save { background: var(--accent); }
+.similar-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.similar-head .seg { display: flex; gap: 4px; }
 .match-title { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }

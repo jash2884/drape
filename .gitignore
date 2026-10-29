@@ -4,3 +4,4 @@ dist/
 .DS_Store
 .keys
 test/fixtures/out/
+scripts/data/

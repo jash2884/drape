@@ -13,3 +13,7 @@
   Cache-Control: no-cache
 /models/*
   Cache-Control: public, max-age=86400
+/catalog/index.json
+  Cache-Control: no-cache
+/catalog/*
+  Cache-Control: public, max-age=86400

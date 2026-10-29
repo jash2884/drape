@@ -19,3 +19,18 @@ cd scripts && npm i && node embed-tags.mjs   # after editing the taxonomy
 node scripts/eval-tags.mjs 300               # tagging accuracy
 cd scripts && node look-debug.mjs ../test/fixtures/street-04.jpg   # detection on a photo
 ```
+
+## Lookalike catalogue
+
+Cheaper lookalikes come from Drape's own catalogue, searched on the device
+(public/js/catalog.js): one shard per category of int8 fashion embeddings plus
+product details and main colour. Rebuild it with:
+
+    cd scripts
+    node catalog-pull.mjs 250 8   # stream Amazon 2023 metadata into data/candidates.jsonl
+    node catalog-embed.mjs        # embed photos, check categories, write public/catalog/*
+    node catalog-colours.mjs      # main colour per product, bumps the catalogue version
+
+The seed uses Amazon's 2023 public metadata: prices are dated and some items
+will be gone. Replace it with live affiliate feeds (Amazon Creators API,
+Awin, Impact) before launch.

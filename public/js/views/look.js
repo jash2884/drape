@@ -1,5 +1,7 @@
 // A look: the photo with every piece outlined and numbered, and for each piece
 // a description you can fix in a tap and links to shop it.
+import { lookalikes } from "../catalog.js";
+import { hexToRgb, rgbToLab } from "../colour.js";
 import { deleteLook, getLook, putLook } from "../db.js";
 import { pieceImage } from "../image.js";
 import * as ml from "../ml.js";
@@ -57,6 +59,7 @@ export async function render(root, id) {
           guesses.map((c) => h("button", { type: "button", class: `chip small${p.tags.category === c ? " on" : ""}`, onclick: (e) => { e.stopPropagation(); p.tags.category = c; p.tags.slot = slotOf(c); save(); drawList(); } }, labelOf("category", c))),
           p.tags.colours.slice(0, 3).map((c) => h("span", { class: "chip small colour" }, h("i", { style: `--c:${c.hex}` }), c.label))),
         matches(p),
+        similar(p),
         h("div", { class: "shop" }, h("span", { class: "small muted" }, "Search stores:"),
           shopLinks(p.tags).map((s) => h("a", { class: "shop-link", href: s.href, target: "_blank", rel: "noopener sponsored", onclick: (e) => e.stopPropagation() }, s.name)))));
   }
@@ -84,9 +87,36 @@ export async function render(root, id) {
         if (!res.ok) throw new Error(data.error ?? "The search didn't work.");
         p.matches = data.products; p.matchError = null;
       } catch (err) { p.matchError = err.message; }
-      save(); show();
+      save(); drawList(); // the lookalikes below compare against the prices just found
     } }, label);
     show();
+    return box;
+  }
+
+  // Cheaper lookalikes from Drape's own catalogue, ranked on the device.
+  function similar(p) {
+    const box = h("div", { class: "matches similar" });
+    const gender = (() => { try { return localStorage.getItem("drape.gender") || null; } catch { return null; } })();
+    const setGender = (g) => (e) => { e.stopPropagation(); try { g ? localStorage.setItem("drape.gender", g) : localStorage.removeItem("drape.gender"); } catch {} drawList(); };
+    // What the exact item costs, when the web search found it in dollars.
+    const usd = (p.matches ?? []).filter((m) => m.priceValue && (m.currency === "$" || m.price?.startsWith("$"))).map((m) => m.priceValue).sort((a, b) => a - b);
+    const ref = usd.length ? usd[Math.floor(usd.length / 2)] : null;
+    const main = p.tags.colours?.[0]?.hex;
+    lookalikes(p.embedding, p.tags.category, { gender, limit: 12, colour: main ? rgbToLab(...hexToRgb(main)) : null }).then((list) => {
+      if (!list.length) return box.remove();
+      box.replaceChildren(
+        h("div", { class: "similar-head" }, h("p", { class: "small muted" }, ref ? `Similar for less (the exact piece is around $${Math.round(ref)})` : "Similar for less"),
+          h("div", { class: "seg", role: "group", "aria-label": "Show" }, [[null, "All"], ["w", "Women"], ["m", "Men"]].map(([g, label]) => h("button", { type: "button", class: `chip small${gender === g ? " on" : ""}`, "aria-pressed": String(gender === g), onclick: setGender(g) }, label)))),
+        h("div", { class: "match-row" }, list.map((m) => {
+          const save = ref && m.price < ref * 0.8 ? Math.round((1 - m.price / ref) * 100) : 0;
+          return h("a", { class: "match", href: m.link, target: "_blank", rel: "noopener nofollow sponsored", onclick: (e) => e.stopPropagation() },
+            h("div", { class: "match-img" }, h("img", { src: `/api/thumb?u=${encodeURIComponent(m.image)}`, alt: "", loading: "lazy" }), save ? h("span", { class: "exact save" }, `Save ${save}%`) : null),
+            h("b", null, `$${m.price.toFixed(2)}`),
+            h("span", { class: "match-title" }, m.title),
+            h("span", { class: "small muted" }, `${m.brand || "Amazon"} · ★ ${m.rating}`));
+        })),
+        h("p", { class: "small muted" }, "Prices may have changed since we last checked."));
+    }).catch(() => box.remove());
     return box;
   }
 
